@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import clean_data_acq as cd
+from scipy.stats import pearsonr
 
 stock_info = pd.read_csv('stock.csv', index_col=0)
 acquisitions = pd.read_csv('acquisitions.csv')
@@ -11,7 +12,7 @@ acquisitions_values = cd.extract_clean_values(acquisitions_values)
 
 # Cleaned Data Set
 acquisitions= cd.clean_data(acquisitions)
-
+print(acquisitions.isna().sum())
 class Company_stock:
   # Take in string for the company_name and beginning year 
   def __init__(self, company_name, years):
@@ -36,7 +37,7 @@ class Company_stock:
   
   def get_stock_data(self):
     stock_data = self.company_df.groupby(self.company_df['date'].dt.year).price.mean().reset_index()
-    return stock_data['price']
+    return stock_data
 
 
 class Company_acq:
@@ -54,7 +55,8 @@ class Company_acq:
       groupby_year = groupby_year.append({"date": i, "id": 0}, ignore_index = True)
     groupby_year = groupby_year.drop_duplicates(subset=['date'], keep='first')
     groupby_year = groupby_year.sort_values(by=['date']).reset_index(drop=True)
-    return groupby_year['id']
+    return groupby_year
+
   def plot_acquisitions(self, tickIntervals = None):
     range_of_years = range(self.acq['date'].dt.year.min(), self.acq['date'].dt.year.max() + 1)
     groupby_year = self.acq.groupby(self.acq['date'].dt.year).id.count().reset_index()
@@ -74,12 +76,23 @@ class Company_acq:
 
   def get_min_year(self):
     return np.min(self.acq['year'])
+  def get_max_year(self):
+    return np.max(self.acq['year'])
   
   def get_stock_name(self):
     return self.name.lower()
 
   def get_year_range(self):
     return np.arange(min(self.acq['year']), max(self.acq['year']) + 1, 1)
+
+def combine_stock_acq(acq_object, stock_object):
+  acq_df = acq_object.get_year_count()
+  stock_df = stock_object.get_stock_data()
+  acq_stock_combined = pd.merge(acq_df, stock_df)
+  return acq_stock_combined
+
+def make_stock_object(acq_object):
+  return Company_stock(acq_object.get_stock_name(), acq_object.get_min_year())
 
 
 

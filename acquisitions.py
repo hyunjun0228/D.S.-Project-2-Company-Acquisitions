@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import seaborn as sns
 import stock_acquisition as stock_acq
+from scipy.stats import pearsonr
 
 
 
@@ -30,50 +31,60 @@ acquisitions= cd.clean_data(acquisitions)
 print(acquisitions.head())
 
 
-# google_stock = stock.company_stock('google')
-# microsoft_stock = stock.company_stock('microsoft')
-# ibm_stock = stock.company_stock('ibm')
-# facebook_stock = stock.company_stock('facebook')
-# yahoo_stock = stock.company_stock('yahoo')
-# twitter_stock = stock.company_stock('twitter')
-def make_stock_object(acq_object):
-  return stock_acq.Company_stock(acq_object.get_stock_name(), acq_object.get_min_year())
+
+
 
 apple_acq = stock_acq.Company_acq('Apple')
-apple_stock = make_stock_object(apple_acq)
+apple_stock = stock_acq.make_stock_object(apple_acq)
 google_acq = stock_acq.Company_acq('Google')
-google_stock = make_stock_object(google_acq)
+google_stock = stock_acq.make_stock_object(google_acq)
 microsoft_acq = stock_acq.Company_acq('Microsoft')
-microsoft_stock = make_stock_object(microsoft_acq)
+microsoft_stock = stock_acq.make_stock_object(microsoft_acq)
+yahoo_acq = stock_acq.Company_acq('Yahoo')
+yahoo_stock = stock_acq.make_stock_object(yahoo_acq)
+twitter_acq = stock_acq.Company_acq('Twitter')
+twitter_stock = stock_acq.make_stock_object(twitter_acq)
+ibm_acq = stock_acq.Company_acq('IBM')
+ibm_stock = stock_acq.make_stock_object(ibm_acq)
+facebook_acq = stock_acq.Company_acq('Facebook')
+facebook_stock = stock_acq.make_stock_object(facebook_acq)
 
+def plot_stock_acq(ax1, acq_object, stock_object, x_intervals=None, y_intervals=None):
 
-def plot_stock_acq(acq_object, stock_object, x_intervals=None, y_intervals=None):
-  sns.set_context('poster', font_scale=.6, rc={'grid.linewidth': 0.4})
-  sns.set_style('darkgrid')
-
-  fig, ax1 = plt.subplots(figsize=(10,8))
-  ax1.bar(x=acq_object.get_year_range(), height=acq_object.get_year_count(), color = 'lightblue', linewidth=.5, label='Acquisitions')
-  ax1.set_ylabel('Number of Acquisitions', fontsize=16, color='lightblue')
-  ax1.set_xlabel('Years', fontsize=16, color='grey')
+  ax1.bar(x=acq_object.get_year_range(), height=acq_object.get_year_count()['id'], color = 'lightblue', linewidth=.5, label='Acquisitions')
+  ax1.set_ylabel('Number of Acquisitions', fontsize=12, color='lightblue')
+  ax1.set_xlabel('Years', fontsize=12, color='grey')
   ax1.tick_params(axis='y', colors='lightblue')
   ax1.tick_params(axis='x', colors='grey')
   if y_intervals != None:
-    ax1.set_yticks([int(i) for i in range(acq_object.get_year_count().min(), acq_object.get_year_count().max() + y_intervals, y_intervals)])
+    ax1.set_yticks([int(i) for i in range(acq_object.get_year_count()['id'].min(), acq_object.get_year_count()['id'].max() + y_intervals, y_intervals)])
   plt.legend(loc="upper left")  
 
   ax2 = ax1.twinx()
   color='lightpink'
-  ax2.plot(stock_object.get_stock_years(), stock_object.get_stock_data(), color= color, linewidth=2, alpha=.8,label='Stock Price')
-  ax2.set_ylabel('Stock Price ($)', color=color, fontsize=16)
+  ax2.plot(stock_object.get_stock_years(), stock_object.get_stock_data()['price'], color= color, linewidth=2, alpha=.8,label='Stock Price')
+  ax2.set_ylabel('Stock Price ($)', color=color, fontsize=12)
   ax2.tick_params(axis='y', colors=color)
   ax2.tick_params(axis='x', colors='grey')
-  if x_intervals != None:
+  # If the stock object has greater range
+  if (x_intervals != None) & (stock_object.get_stock_years()[0] <= acq_object.get_min_year()):
     ax2.set_xticks(range(stock_object.get_stock_years()[0], stock_object.get_stock_years()[-1], x_intervals))
+  elif (x_intervals != None) & (acq_object.get_min_year() < stock_object.get_stock_years()[0]):
+    ax2.set_xticks(range(acq_object.get_min_year(), stock_object.get_stock_years()[-1], x_intervals))
   plt.legend(loc="upper right")
 
-  plt.title(f"Changes in Stock Price and Number of Acquisitions for {acq_object.get_companyName()}", fontsize=20)
-  sns.despine()
-  plt.tight_layout()
-  plt.show()
-  plt.clf()
+  plt.title(f"Changes in Stock Price and Number of Acquisitions for {acq_object.get_companyName()}", fontsize=10)
+
+
+# sns.set_context('notebook', font_scale=.6, rc={'grid.linewidth': .2})
+# sns.set_style('darkgrid')
+# axis1= plt.subplot(1,2,1)
+# plot_stock_acq(axis1,apple_acq, apple_stock)
+
+# axis2 = plt.subplot(1,2,2)
+# plot_stock_acq(axis2,ibm_acq, ibm_stock)
+# plt.tight_layout()
+# plt.show()
+
+
 
